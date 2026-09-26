@@ -97,12 +97,14 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 /* 画像背景のデザイン（ハワイアン）：Happy Birthday は絵の中にあるので文字は隠して位置だけ確保 */
 .card .bgimg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;user-select:none}
 .card.imgbg .hb{visibility:hidden;height:39mm;margin-top:3mm}
-.card.imgbg .agebox{margin-top:2mm}
-.card.imgbg .agebox .date{font-size:4.8mm;margin-bottom:1.5mm}
-.card.imgbg .agebox .age{font-size:10mm}
-.card.imgbg .photo{width:80mm;height:56mm;flex-basis:56mm;margin-top:3mm;border-width:.9mm;box-shadow:0 1mm 3mm rgba(229,64,94,.18)}
+.card.imgbg .agebox{margin-top:2.5mm;display:flex;align-items:center;justify-content:center;line-height:1.2}
+.card.imgbg .agebox br{display:none}
+.card.imgbg .agebox .date{font-size:4.8mm;margin:0 3mm 0 0}
+.card.imgbg .agebox .age{font-size:9mm}
+.card.imgbg .photo{width:112mm;height:84mm;flex-basis:84mm;margin-top:3mm;border-width:1mm;box-shadow:0 1mm 3mm rgba(229,64,94,.18)}
 .card.imgbg .inner{inset:14mm 14mm 23mm}
-.card.imgbg .msg{margin-top:4mm;width:116mm;font-size:5mm}
+.card.imgbg .msg{margin-top:3mm;width:120mm;font-size:4.6mm;line-height:1.6;min-height:0}
+.card.imgbg .from small{display:none}
 .card.imgbg.nophoto .msg{margin-top:16mm;font-size:6mm;width:124mm}
 [data-theme=pastel]{--c-bg:#fbf6fd;--c-main:#9b6bc2;--c-sub:#c9a4e0;--c-ink:#3f3348;--c-leaf:#9cc98c;--c-f2:#ffffff}
 [data-theme=sunset]{--c-bg:#fff3e4;--c-main:#e8742f;--c-sub:#f2a45a;--c-ink:#3b2a1f;--c-leaf:#4f9460;--c-f2:#f5c542}
@@ -609,12 +611,12 @@ async function renderPNG(id){
     g.restore();
   }
   { // メッセージ（画面の折り返しに合わせて1行ずつ描く）
-    const m=q('.msg'),f=font(m),b=box(m),lh=f.px*1.75;g.font=f.css;g.fillStyle=f.color;g.textAlign='center';g.textBaseline='middle';
+    const m=q('.msg'),f=font(m),b=box(m),lh=parseFloat(getComputedStyle(m).lineHeight)*C||f.px*1.75;g.font=f.css;g.fillStyle=f.color;g.textAlign='center';g.textBaseline='middle';
     const lines=[];const maxW=b.w-4*S;
     m.innerText.replace(/\n$/,'').split('\n').forEach(par=>{let cur='';for(const ch of par){if(g.measureText(cur+ch).width>maxW&&cur){lines.push(cur);cur=ch;}else cur+=ch;}lines.push(cur);});
     lines.forEach((ln,i)=>g.fillText(ln,b.x+b.w/2,b.y+1*S+lh*(i+.5)));
   }
-  text(q('.from small'),q('.from small').textContent);
+  if(q('.from small').getClientRects().length)text(q('.from small'),q('.from small').textContent);
   text(q('.from .fromtxt'),q('.from .fromtxt').textContent);
   return cv;
 }
