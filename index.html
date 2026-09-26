@@ -61,6 +61,10 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#2b2622;color:#fff;padding:12px 16px;border-radius:10px;z-index:50;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.25);width:calc(100vw - 32px);max-width:460px}
 .toast>span{flex:1 1 auto;min-width:0;line-height:1.5}
 .toast .btn{background:#fff;color:#2b2622;border:0}
+.help{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+.helpbox{background:#fff;border-radius:12px;max-width:680px;width:100%;padding:18px 20px;line-height:1.75;font-size:14px}
+.helpbox h2{font-family:var(--maru);color:var(--accent);margin:0 0 6px;font-size:20px}.helpbox h3{color:var(--accent);font-size:15px;margin:14px 0 4px;border-bottom:1px solid #f0c9bd}
+.helpbox ol,.helpbox ul{padding-left:22px;margin:4px 0}
 .sync{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin-bottom:12px;font-size:13px;background:#faf8f5}
 .sync.ok{background:#eef7ef;border-color:#cfe6d2;color:#2e6b36}.sync.err{background:#fdeeee;border-color:#f0c9c9;color:#b03a2e}.sync.busy{color:#7a7068}
 .sync .btn{padding:4px 10px;font-size:12px}
@@ -155,7 +159,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 
 @media print{
   body{background:#fff}
-  header.top,aside,.cardtools,.noprint,.toast{display:none!important}
+  header.top,aside,.cardtools,.noprint,.toast,.help{display:none!important}
   main{padding:0;display:block}
   .cards{gap:0;display:block}
   html,body{height:auto!important;overflow:visible!important}
@@ -184,6 +188,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
     <button class="tab" data-view="year">年間一覧表</button>
   </div>
   <div class="grow"></div>
+  <button class="btn" id="helpBtn">📖 使い方</button>
   <button class="btn primary" id="printBtn" disabled>🖨 印刷する</button>
 </header>
 
@@ -252,6 +257,28 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 </div>
 </main>
 <div id="toast" class="toast hide"></div>
+<div id="help" class="help hide"><div class="helpbox">
+<button class="btn" id="helpClose" style="float:right">✕ 閉じる</button>
+<h2>📖 使い方</h2>
+<h3>はじめに（1回だけ）</h3>
+<ol><li><b>パソコン</b>：このページをブックマーク。左上が「☁ 同期済み」ならOK。</li>
+<li><b>スマホ</b>：「スマホ用QR」（PDF、またはパソコンの「設定」→「📱 スマホに設定を送る」）をカメラで読む → 開いたページを「ホーム画面に追加」。</li></ol>
+<h3>毎月の流れ</h3>
+<ol><li>利用者が変わったら、カイポケの「利用者情報」CSVを①で読み込む（全端末に反映）。</li>
+<li>②で月を選ぶ →③でカードを作る方を確認（デイ以外の方はチェックを外す）。</li>
+<li><b>スマホ</b>でカードの「📷 写真を撮る」→ 撮るとすぐカードに入る。メッセージは文章をタップして書き換え可。</li>
+<li><b>パソコン</b>で「🖨 印刷する」→ 切る → ラミネート。写真・文章・デザインは自動で同期（1分以内。すぐ見たいときは🔄）。</li></ol>
+<h3>印刷の設定</h3>
+<ul><li><b>A4用紙（B5で切る）</b>：「印刷する用紙」でA4を選ぶ → 印刷画面で用紙A4・倍率100%・余白なし → 四隅のトンボに合わせて切るとB5。</li>
+<li><b>B5用紙</b>：用紙B5（JIS）・倍率100%・余白なし。</li>
+<li>色が出ないときは「背景のグラフィック」にチェック。2ページになるときは倍率100%・余白なしを確認。</li>
+<li>一覧表（月別・年間）はタブを切り替えてA4で印刷。</li></ul>
+<h3>困ったとき</h3>
+<ul><li>写真がパソコンに出ない → 🔄 を押す／開き直す。</li>
+<li>「合言葉が違います」「同期：未設定」→ スマホ用QRを読み直す。</li>
+<li>古い画面のまま → アプリを閉じて開き直す（スマホは下に引っぱって更新）。</li></ul>
+<p class="note">詳しくは「使い方マニュアル（PDF）」をご覧ください。QRコードには合言葉が入っているので、職員以外に見せないでください。</p>
+</div></div>
 
 <script>
 /* QR Code Generator for JavaScript (c) 2009 Kazuhiko Arase, MIT License */
@@ -746,6 +773,9 @@ $('#vCard').addEventListener('click',e=>{
   if(act==='print1')doPrint(id);
 });
 $('#printBtn').onclick=()=>doPrint(null);
+$('#helpBtn').onclick=()=>$('#help').classList.remove('hide');
+$('#helpClose').onclick=()=>$('#help').classList.add('hide');
+$('#help').onclick=e=>{if(e.target.id==='help')$('#help').classList.add('hide');};
 $('#syncOpen').onclick=()=>$('#syncPanel').classList.toggle('hide');
 $('#syncNow').onclick=async()=>{if(await syncPull()){resetSel();render();}};
 $('#syncSave').onclick=async()=>{
