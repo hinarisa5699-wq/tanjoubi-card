@@ -140,6 +140,19 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 .year .m .nm{color:#aaa}
 .hide{display:none!important}
 .trim{display:none}.trim i{position:absolute;border:0 solid #222}
+/* ===== 作成履歴 ===== */
+.hist{max-width:760px;margin:0 auto}
+.hist h4{font-family:var(--maru);color:var(--accent);margin:18px 0 8px;font-size:16px}
+.hist h4:first-child{margin-top:0}
+.hitem{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
+.hitem .hrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.hitem .thumb{width:72px;height:54px;border-radius:6px;background:#f3ece4;overflow:hidden;flex:0 0 72px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.hitem .thumb img{width:100%;height:100%;object-fit:cover}
+.hitem .hinfo{flex:1;min-width:160px;line-height:1.6}
+.hitem .hinfo b{font-family:var(--maru);font-size:15px}
+.hitem .hbtns{display:flex;gap:6px;flex-wrap:wrap}
+.hitem .hcard{margin-top:12px;display:flex;flex-direction:column;align-items:center}
+.hitem.open{border-color:var(--accent)}
 
 /* ===== スマホ ===== */
 @media (max-width:900px){
@@ -172,6 +185,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
   .card .msg:hover,.card .msg:focus{background:none;box-shadow:none}
   .sheet{box-shadow:none;margin:0;padding:0;width:auto;min-height:0;zoom:1!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.print-one .cardwrap:not(.target){display:none}
+  .hist h4,.hitem .hrow{display:none!important}
+  .hitem{border:0;padding:0;margin:0;background:none}
+  .hitem .hcard{margin:0;display:block}
   body.a4cut .cardwrap{width:210mm;height:296mm;position:relative;padding:20mm 14mm}
   body.a4cut .card{height:257mm!important}
   body.a4cut .trim{display:block}
@@ -186,6 +202,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
     <button class="tab on" data-view="card">誕生日カード</button>
     <button class="tab" data-view="month">月別一覧表</button>
     <button class="tab" data-view="year">年間一覧表</button>
+    <button class="tab" data-view="hist">作成履歴</button>
   </div>
   <div class="grow"></div>
   <button class="btn" id="helpBtn">📖 使い方</button>
@@ -243,6 +260,10 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
       <b>印刷：</b>「B5用紙」なら用紙サイズ <b>B5（JIS）</b>、「A4用紙」なら <b>A4</b> を選び、余白は<b>なし</b>・倍率は<b>100%</b>。A4のときは四隅のトンボ（黒い線）に合わせて切るとB5の大きさになります。スマホから印刷しにくいときは、保存した画像をB5で印刷してください。</div>
     </details>
   </div>
+  <div id="histOpts" class="hide">
+    <h3>作成履歴</h3>
+    <div class="note">写真を入れたカード・画像で保存したカード・印刷したカードが、自動でここに残ります（パソコン・スマホで共有）。<br>「開く」でカードを表示して、もう一度画像保存・印刷ができます。退所された方のカードも残ります。</div>
+  </div>
   <div id="listOpts" class="hide">
     <h3>印刷のしかた</h3>
     <div class="note">用紙サイズは <b>A4</b> で印刷してください。年間一覧表は2ページ以上になることがあります。</div>
@@ -254,6 +275,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
   <div id="vCard"></div>
   <div id="vMonth" class="hide sheetwrap"></div>
   <div id="vYear" class="hide sheetwrap"></div>
+  <div id="vHist" class="hide"></div>
 </div>
 </main>
 <div id="toast" class="toast hide"></div>
@@ -273,6 +295,9 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
 <li><b>B5用紙</b>：用紙B5（JIS）・倍率100%・余白なし。</li>
 <li>色が出ないときは「背景のグラフィック」にチェック。2ページになるときは倍率100%・余白なしを確認。</li>
 <li>一覧表（月別・年間）はタブを切り替えてA4で印刷。</li></ul>
+<h3>作成履歴</h3>
+<ul><li>写真を入れた・画像で保存した・印刷したカードは「作成履歴」タブに自動で残ります（全端末で共有）。</li>
+<li>「開く」でそのときのカードが出るので、画像保存・印刷をやり直せます。不要な履歴は「履歴から消す」。</li></ul>
 <h3>困ったとき</h3>
 <ul><li>写真がパソコンに出ない → 🔄 を押す／開き直す。</li>
 <li>「合言葉が違います」「同期：未設定」→ スマホ用QRを読み直す。</li>
@@ -324,7 +349,11 @@ async function syncPull(quiet){
   try{
     const j=await api('getAll');
     if(j.people&&j.people.length){people=j.people;loadedAt=j.loadedAt||loadedAt;LS.set('people',people);LS.set('loadedAt',loadedAt);}
-    msgs=j.msgs||{};LS.set('msgs',msgs);applyRemoteSettings();
+    const srv=j.msgs||{};
+    // まだ送れていない（送信待ちの）変更は、サーバーの古い内容で上書きしない
+    Object.keys(msgDirty).forEach(k=>{if(k in msgs)srv[k]=msgs[k];else delete srv[k];
+      if(!msgTimers[k]&&!pendingUp.some(x=>x.kind==='msg'&&x.key===k))queue({kind:'msg',key:k,text:(k in msgs)?msgs[k]:null});});
+    msgs=srv;LS.set('msgs',msgs);applyRemoteSettings();
     SYNC.remotePhotos=j.photos||{};SYNC.ok=true;SYNC.last=Date.now();
     Object.keys(photos).forEach(k=>delete photos[k]);
     await flushPending();
@@ -336,7 +365,8 @@ async function syncPull(quiet){
 let pendingUp=LS.get('pendingUp',[]);
 function queue(op){pendingUp=pendingUp.filter(x=>!(x.key===op.key&&x.kind===op.kind));pendingUp.push(op);LS.set('pendingUp',pendingUp);}
 async function send(op){
-  if(op.kind==='msg')await api('setMsg',{key:op.key,text:op.text},true);
+  if(op.kind==='msg'){await api('setMsg',{key:op.key,text:op.text},true);
+    const cur=(op.key in msgs)?msgs[op.key]:null;if(cur===op.text){delete msgDirty[op.key];LS.set('msgDirty',msgDirty);}}
   if(op.kind==='delPhoto'){await api('delPhoto',{key:op.key},true);delete SYNC.remotePhotos[op.key];}
   if(op.kind==='photo'){const v=await DB.get(op.key);if(!v||!v.data)return;const j=await api('putPhoto',{key:op.key,data:v.data},true);
     v.updated=j.updated;v.synced=true;await DB.put(op.key,v);SYNC.remotePhotos[op.key]=j.updated;}
@@ -362,7 +392,9 @@ async function loadPhoto(k){
   return v?v.data:null;
 }
 const msgTimers={};
-function pushMsg(k){clearTimeout(msgTimers[k]);msgTimers[k]=setTimeout(()=>push({kind:'msg',key:k,text:(k in msgs)?msgs[k]:null}),1200);}
+let msgDirty=LS.get('msgDirty',{});   // まだサーバーに届いていないメッセージ等のキー
+function pushMsg(k,wait=1200){msgDirty[k]=1;LS.set('msgDirty',msgDirty);clearTimeout(msgTimers[k]);
+  msgTimers[k]=setTimeout(()=>{delete msgTimers[k];push({kind:'msg',key:k,text:(k in msgs)?msgs[k]:null});},wait);}
 const b64u=s=>btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const unb64u=s=>new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)));
 
@@ -517,9 +549,10 @@ const TRIM=(()=>{const L=14,T=20,R=196,B=277,g=2,n=8,w=.25;let h='';
     h+=`<i style="left:${sx<0?x-g-n:x+g}mm;top:${y-w/2}mm;width:${n}mm;height:0;border-top-width:${w}mm"></i>`;
     h+=`<i style="left:${x-w/2}mm;top:${sy<0?y-g-n:y+g}mm;width:0;height:${n}mm;border-left-width:${w}mm"></i>`;}
   return h;})();
-function cardHTML(p){
-  const k=pkey(p),ph=photos[k],usePhoto=$('#usePhoto').checked;
-  return `<div class="cardwrap" data-id="${esc(p.id)}">
+function cardHTML(p,o={}){
+  const yr=o.year||Y(),k=`${yr}_${p.id}`,ph=photos[k],usePhoto=o.usePhoto??$('#usePhoto').checked,th=o.theme||theme;
+  const msgTxt=(k in msgs)?msgs[k].replaceAll('{名前}',surname(p)):(o.msg!=null?o.msg:fillMsg(p));
+  return `<div class="cardwrap" data-id="${esc(p.id)}" data-key="${esc(k)}" data-year="${yr}">
     <div class="cardtools noprint">
       <div class="who">${p.m}/${p.d}　${esc(p.name)} 様</div>
       ${usePhoto?`<button class="btn cam" data-act="camera">📷 写真を撮る</button><button class="btn" data-act="album">🖼 アルバム</button>${ph?'<button class="btn" data-act="unphoto">写真を外す</button>':''}`:''}
@@ -528,16 +561,16 @@ function cardHTML(p){
       <button class="btn" data-act="resetmsg">文面を戻す</button>
     </div>
     <div class="trim">${TRIM}</div>
-    <div class="card ${usePhoto?'':'nophoto'} ${THEME_IMG[theme]?'imgbg':''}" data-theme="${theme}">
-      ${THEME_IMG[theme]?`<img class="bgimg" src="${THEME_IMG[theme]}" alt="">`:decoSVG(theme)}
+    <div class="card ${usePhoto?'':'nophoto'} ${THEME_IMG[th]?'imgbg':''}" data-theme="${th}">
+      ${THEME_IMG[th]?`<img class="bgimg" src="${THEME_IMG[th]}" alt="">`:decoSVG(th)}
       <div class="inner">
         <div class="hb">Happy Birthday</div>
         <div class="hb-sub">お誕生日おめでとうございます</div>
         <div class="name"><span class="nm">${esc(p.name)}</span><small>様</small></div>
-        <div class="agebox"><span class="date">${p.m}月${p.d}日</span><br><span class="age">${ageAt(p,Y())}</span><span class="agetxt">歳のお誕生日</span></div>
+        <div class="agebox"><span class="date">${p.m}月${p.d}日</span><br><span class="age">${ageAt(p,yr)}</span><span class="agetxt">歳のお誕生日</span></div>
         <div class="photo" data-act="camera">${ph?`<img src="${ph}" alt="">`:'<span class="ph">写真<br><span class="tap" style="font-size:3.4mm;letter-spacing:0">タップで撮影</span></span>'}</div>
-        <div class="msg" contenteditable="true" spellcheck="false" data-key="${esc(k)}">${esc(fillMsg(p))}</div>
-        <div class="from"><small>${Y()}年${p.m}月${p.d}日</small><span class="fromtxt">${esc($('#from').value)}</span></div>
+        <div class="msg" contenteditable="true" spellcheck="false" data-key="${esc(k)}">${esc(msgTxt)}</div>
+        <div class="from"><small>${yr}年${p.m}月${p.d}日</small><span class="fromtxt">${esc(o.from??$('#from').value)}</span></div>
       </div>
     </div></div>`;
 }
@@ -550,7 +583,7 @@ async function renderCards(){
   fitCards();
 }
 function fitCards(){
-  const W=$('#vCard').clientWidth, cw=182*96/25.4;
+  const W=(view==='hist'?$('#vHist'):$('#vCard')).clientWidth, cw=182*96/25.4;
   const z=Math.min(1,(W-2)/cw);
   document.querySelectorAll('.card').forEach(c=>c.style.zoom=z<1?z.toFixed(4):'');
 }
@@ -577,8 +610,8 @@ function renderYear(){
 }
 async function render(){
   showSaved();renderPlist();
-  if(view==='card')await renderCards(); else if(view==='month')renderMonth(); else renderYear();
-  $('#printBtn').disabled=!people.length||(view==='card'&&!document.querySelector('.card'));
+  if(view==='card')await renderCards(); else if(view==='month')renderMonth(); else if(view==='hist')await renderHist(); else renderYear();
+  $('#printBtn').disabled=view==='hist'?!document.querySelector('#vHist .card'):(!people.length||(view==='card'&&!document.querySelector('#vCard .card')));
   LS.set('ym',[Y(),M()]);
 }
 function saveSettings(){LS.set('theme',theme);LS.set('usePhoto',$('#usePhoto').checked);LS.set('onlyActive',$('#onlyActive').checked);LS.set('from',$('#from').value);LS.set('msgTpl',$('#msg').value);
@@ -593,22 +626,22 @@ function applyRemoteSettings(){
 }
 
 /* ---------- 写真 ---------- */
-function pickPhoto(id,camera){
-  const p=people.find(x=>x.id===id);if(!p)return;
+function pickPhoto(c,camera){
+  const p=c.p,id=p.id;
   const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
   if(camera)inp.setAttribute('capture','environment');
   inp.style.display='none';document.body.appendChild(inp);
-  LS.set('pending',{id,ym:[Y(),M()]}); // カメラ中に画面が再読み込みされても戻れるように
+  LS.set('pending',{id,ym:[c.year,p.m],hist:view==='hist'?c.key:''}); // カメラ中に画面が再読み込みされても戻れるように
   inp.onchange=()=>{const f=inp.files[0];inp.remove();if(!f)return;
     const img=new Image(),url=URL.createObjectURL(f);
     img.onload=async()=>{
-      const s=Math.min(1,1600/Math.max(img.width,img.height));const c=document.createElement('canvas');
-      c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const s=Math.min(1,1600/Math.max(img.width,img.height));const cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*s);cv.height=Math.round(img.height*s);cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
       URL.revokeObjectURL(url);
-      const k=pkey(p),data=c.toDataURL('image/jpeg',.85);photos[k]=data;await DB.put(k,{data,updated:String(Date.now()),synced:false});push({kind:'photo',key:k});
+      const k=c.key,data=cv.toDataURL('image/jpeg',.85);photos[k]=data;await DB.put(k,{data,updated:String(Date.now()),synced:false});push({kind:'photo',key:k});
       await render();
-      const w=document.querySelector(`.cardwrap[data-id="${CSS.escape(id)}"]`);if(w)w.scrollIntoView({behavior:'smooth',block:'start'});
-      toast(`${esc(p.name)} 様のカードができました`,'📥 画像で保存',()=>saveImage(id));
+      const w=wrapOf(k);if(w){w.scrollIntoView({behavior:'smooth',block:'start'});recordHist(w,'photo');}
+      toast(`${esc(p.name)} 様のカードができました（作成履歴に保存）`,'📥 画像で保存',()=>{const x=wrapOf(k);if(x)saveImage(x);});
     };
     img.onerror=()=>{URL.revokeObjectURL(url);toast('この写真は読み込めませんでした（別の写真を選んでください）');};
     img.src=url;};
@@ -623,8 +656,8 @@ function toast(html,btn,fn){
 
 /* ---------- 画像で保存（カードをそのまま画像に描く） ---------- */
 function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
-async function renderPNG(id){
-  const w=document.querySelector(`.cardwrap[data-id="${CSS.escape(id)}"]`);const card=w.querySelector('.card');
+async function renderPNG(w){
+  const card=w.querySelector('.card'),theme=card.dataset.theme;
   const S=8, W=182*S, H=257*S;   // 1mm = 8px（約203dpi）
   try{await document.fonts.ready;}catch(e){}
   const cr=card.getBoundingClientRect(), k=182/cr.width; // 画面px→mm
@@ -671,11 +704,12 @@ async function renderPNG(id){
   text(q('.from .fromtxt'),q('.from .fromtxt').textContent);
   return cv;
 }
-async function saveImage(id){
-  const p=people.find(x=>x.id===id);if(!p)return;
+async function saveImage(w){
+  const c=ctxOf(w);if(!c)return;const p=c.p;
   document.activeElement&&document.activeElement.blur();
-  let cv;try{cv=await renderPNG(id);}catch(e){console.error(e);toast('画像を作れませんでした');return;}
-  const name=`誕生日カード_${surname(p)}様_${Y()}-${String(p.m).padStart(2,'0')}.png`;
+  let cv;try{cv=await renderPNG(w);}catch(e){console.error(e);toast('画像を作れませんでした');return;}
+  recordHist(w,'save');
+  const name=`誕生日カード_${surname(p)}様_${c.year}-${String(p.m).padStart(2,'0')}.png`;
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
   const file=new File([blob],name,{type:'image/png'});
   const mobile=matchMedia('(max-width:900px)').matches||/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -686,9 +720,51 @@ async function saveImage(id){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
 }
 
+/* ---------- 作成履歴（同期サーバーの「メッセージ」に _hist: で保存。サーバー側の変更は不要） ---------- */
+const HK='_hist:';
+function histList(){const a=[];Object.keys(msgs).forEach(k=>{if(k.startsWith(HK)){try{const o=JSON.parse(msgs[k]);o.key=k.slice(HK.length);a.push(o);}catch(e){}}});
+  return a.sort((x,y)=>(y.year*100+y.m)-(x.year*100+x.m)||x.d-y.d||(y.at||0)-(x.at||0));}
+function histGet(key){try{const o=JSON.parse(msgs[HK+key]||'null');if(o)o.key=key;return o;}catch(e){return null;}}
+function wrapOf(key){const box=view==='hist'?'#vHist':'#vCard';return document.querySelector(`${box} .cardwrap[data-key="${CSS.escape(key)}"]`);}
+function ctxOf(w){const key=w.dataset.key,year=+w.dataset.year,id=w.dataset.id;
+  let p=people.find(x=>x.id===id);if(!p){const h=histGet(key);if(h)p={id:h.id,name:h.name,kana:h.kana||'',y:h.y,m:h.m,d:h.d,sex:h.sex||'',status:''};}
+  return p?{p,key,year}:null;}
+function recordHist(w,act){
+  const c=ctxOf(w);if(!c)return;const p=c.p,card=w.querySelector('.card');
+  const old=histGet(c.key)||{};const acts=Object.assign({},old.acts||{});acts[act]=Date.now();
+  const o={id:p.id,name:p.name,kana:p.kana,sex:p.sex,y:p.y,m:p.m,d:p.d,year:c.year,age:ageAt(p,c.year),
+    theme:card.dataset.theme,usePhoto:!card.classList.contains('nophoto'),
+    msg:card.querySelector('.msg').innerText.replace(/\n$/,''),from:card.querySelector('.fromtxt').textContent,
+    first:old.first||Date.now(),at:Date.now(),acts};
+  msgs[HK+c.key]=JSON.stringify(o);LS.set('msgs',msgs);pushMsg(HK+c.key,0);
+}
+let histOpen='';
+const fmtAt=t=>{if(!t)return'';const d=new Date(t);return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;};
+async function renderHist(){
+  const list=histList();
+  if(!list.length){$('#vHist').innerHTML='<div class="empty">まだ作成履歴はありません。<br>カードに写真を入れる・画像で保存する・印刷すると、ここに自動で残ります。</div>';return;}
+  await Promise.all(list.map(async h=>{if(!(h.key in photos))photos[h.key]=await loadPhoto(h.key);}));
+  let h='<div class="hist">',grp='';
+  list.forEach(e=>{
+    const g=`${e.year}年${e.m}月`;if(g!==grp){grp=g;h+=`<h4>${g}のお誕生日</h4>`;}
+    const ph=photos[e.key],a=e.acts||{},open=histOpen===e.key;
+    const done=[a.photo?'📷写真':'',a.save?'📥保存':'',a.print?'🖨印刷':''].filter(Boolean).join('・');
+    const p={id:e.id,name:e.name,kana:e.kana||'',y:e.y,m:e.m,d:e.d,sex:e.sex||''};
+    h+=`<div class="hitem ${open?'open':''}" data-hk="${esc(e.key)}"><div class="hrow noprint">
+      <div class="thumb">${ph?`<img src="${ph}" alt="">`:'写真なし'}</div>
+      <div class="hinfo"><b>${esc(e.name)} 様</b>　${e.m}/${e.d}（${e.age}歳）<br><span class="note">${done}　最終 ${fmtAt(e.at)}</span></div>
+      <div class="hbtns"><button class="btn ${open?'':'primary'}" data-h="open">${open?'閉じる':'開く'}</button><button class="btn" data-h="del">履歴から消す</button></div></div>
+      ${open?`<div class="hcard">${cardHTML(p,{year:e.year,theme:e.theme,usePhoto:e.usePhoto,msg:e.msg,from:e.from})}</div>`:''}</div>`;
+  });
+  $('#vHist').innerHTML=h+'</div>';
+  fitCards();
+}
+
 /* ---------- 印刷 ---------- */
 function doPrint(oneId){
-  if(view==='card'){const a4=$('#paper').value==='a4';
+  const box=view==='hist'?'#vHist':'#vCard';
+  if(view==='card'||view==='hist')document.querySelectorAll(box+' .cardwrap').forEach(w=>{if(!oneId||w.dataset.id===oneId)recordHist(w,'print');});
+  if(view==='card'||view==='hist'){const a4=$('#paper').value==='a4';
     $('#pagestyle').textContent=a4?'@page{size:A4 portrait;margin:0}':'@page{size:182mm 257mm;margin:0}';
     document.body.classList.toggle('a4cut',a4);}
   document.activeElement&&document.activeElement.blur();
@@ -722,7 +798,9 @@ window.addEventListener('afterprint',()=>document.body.classList.remove('print-o
   $('#onlyActive').checked=LS.get('onlyActive',true);
   if(matchMedia('(max-width:900px)').matches){$('#designBox').open=false;}
   resetSel();render().then(()=>syncPull()).then(ok=>{if(ok){resetSel();return render();}}).then(()=>{
-    if(pend){LS.set('pending',null);const w=document.querySelector(`.cardwrap[data-id="${CSS.escape(pend.id)}"]`);if(w)w.scrollIntoView({block:'start'});}
+    if(pend){LS.set('pending',null);
+      if(pend.hist){histOpen=pend.hist;document.querySelector('.tab[data-view="hist"]').click();return;}
+      const w=document.querySelector(`.cardwrap[data-id="${CSS.escape(pend.id)}"]`);if(w)w.scrollIntoView({block:'start'});}
   });
 })();
 
@@ -737,9 +815,9 @@ drop.addEventListener('drop',ev=>{const f=ev.dataTransfer.files[0];if(f)f.arrayB
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));view=t.dataset.view;
-  $('#vCard').classList.toggle('hide',view!=='card');$('#vMonth').classList.toggle('hide',view!=='month');$('#vYear').classList.toggle('hide',view!=='year');
-  $('#cardOpts').classList.toggle('hide',view!=='card');$('#listOpts').classList.toggle('hide',view==='card');
-  $('#pagestyle').textContent=view==='card'?'@page{size:182mm 257mm;margin:0}':'@page{size:A4 portrait;margin:12mm}';
+  $('#vCard').classList.toggle('hide',view!=='card');$('#vMonth').classList.toggle('hide',view!=='month');$('#vYear').classList.toggle('hide',view!=='year');$('#vHist').classList.toggle('hide',view!=='hist');
+  $('#cardOpts').classList.toggle('hide',view!=='card');$('#listOpts').classList.toggle('hide',view!=='month'&&view!=='year');$('#histOpts').classList.toggle('hide',view!=='hist');
+  $('#pagestyle').textContent=(view==='card'||view==='hist')?'@page{size:182mm 257mm;margin:0}':'@page{size:A4 portrait;margin:12mm}';
   render();
 });
 const setYM=(y,m)=>{if(![...$('#year').options].some(o=>+o.value===y))$('#year').insertAdjacentHTML('beforeend',`<option value="${y}">${y}年</option>`);$('#year').value=y;$('#month').value=m;resetSel();render();};
@@ -760,17 +838,24 @@ $('#tpl').onchange=()=>{$('#msg').value=TPLS[+$('#tpl').value][1];saveSettings()
 $('#msg').oninput=saveSettings;
 $('#applyMsg').onclick=()=>{inMonth(M()).forEach(p=>{const k=pkey(p);if(k in msgs){delete msgs[k];pushMsg(k);}});LS.set('msgs',msgs);saveSettings();render();};
 
-$('#vCard').addEventListener('input',e=>{const m=e.target.closest('.msg');if(m){msgs[m.dataset.key]=m.innerText.replace(/\n$/,'');LS.set('msgs',msgs);pushMsg(m.dataset.key);}});
-$('#vCard').addEventListener('click',e=>{
+['#vCard','#vHist'].forEach(sel=>{
+$(sel).addEventListener('input',e=>{const m=e.target.closest('.msg');if(m){msgs[m.dataset.key]=m.innerText.replace(/\n$/,'');LS.set('msgs',msgs);pushMsg(m.dataset.key);}});
+$(sel).addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');const w=e.target.closest('.cardwrap');
-  if(!b||!w)return;const id=w.dataset.id,p=people.find(x=>x.id===id);
+  if(!b||!w)return;const c=ctxOf(w);if(!c)return;const k=c.key;
   const act=b.dataset.act;
-  if(act==='camera')pickPhoto(id,true);
-  if(act==='album')pickPhoto(id,false);
-  if(act==='unphoto'){const k=pkey(p);photos[k]=null;DB.del(k);push({kind:'delPhoto',key:k});render();}
-  if(act==='resetmsg'){const k=pkey(p);delete msgs[k];LS.set('msgs',msgs);pushMsg(k);render();}
-  if(act==='save')saveImage(id);
-  if(act==='print1')doPrint(id);
+  if(act==='camera')pickPhoto(c,true);
+  if(act==='album')pickPhoto(c,false);
+  if(act==='unphoto'){photos[k]=null;DB.del(k);push({kind:'delPhoto',key:k});render();}
+  if(act==='resetmsg'){delete msgs[k];LS.set('msgs',msgs);pushMsg(k);render();}
+  if(act==='save')saveImage(w);
+  if(act==='print1')doPrint(w.dataset.id);
+});});
+$('#vHist').addEventListener('click',e=>{
+  const b=e.target.closest('[data-h]');if(!b)return;const it=b.closest('.hitem');const key=it.dataset.hk;
+  if(b.dataset.h==='open'){histOpen=histOpen===key?'':key;render().then(()=>{const x=document.querySelector(`.hitem[data-hk="${CSS.escape(key)}"]`);if(x)x.scrollIntoView({behavior:'smooth',block:'start'});});}
+  if(b.dataset.h==='del'){const h=histGet(key);if(!confirm(`${h?h.name:''} 様（${h?h.year+'年'+h.m+'月':''}）の履歴を消しますか？\n（カードの写真やメッセージは消えません）`))return;
+    delete msgs[HK+key];LS.set('msgs',msgs);pushMsg(HK+key,0);if(histOpen===key)histOpen='';render();}
 });
 $('#printBtn').onclick=()=>doPrint(null);
 $('#helpBtn').onclick=()=>$('#help').classList.remove('hide');
