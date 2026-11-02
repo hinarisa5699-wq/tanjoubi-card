@@ -221,7 +221,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;m
   </div>
   <h3>① カイポケの利用者情報CSV</h3>
   <div id="savedBox" class="saved hide"><div class="grow" id="savedInfo"></div><button class="btn" id="reload">読み込み直す</button></div>
-  <div class="drop" id="drop"><b>CSVファイルを選ぶ</b><br><span class="note">（パソコンはここにドラッグでもOK）</span><input type="file" id="file" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel" hidden></div>
+  <div class="drop" id="drop" style="margin-top:6px"><b id="dropTitle">📂 CSVファイルを選ぶ</b><br><span class="note">（パソコンはここにドラッグでもOK）</span><input type="file" id="file" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel" hidden></div>
   <div class="note" id="loadInfo" style="margin-top:6px">カイポケ →「利用者情報」をCSV出力したファイルを入れてください。使うのは氏名・生年月日などだけで、住所や口座の列は読み込みません。同期を設定していれば、パソコンで1回読み込むだけでスマホにも反映されます。</div>
   <label class="row note" style="margin-top:4px"><input type="checkbox" id="onlyActive" checked> 「利用中」の方だけ対象にする</label>
 
@@ -459,7 +459,8 @@ function load(buf){
 function info(t,type){const el=$('#loadInfo');el.textContent=t;el.style.color=type==='err'?'#c0392b':'#2e7d32';}
 function showSaved(){
   const has=people.length>0;
-  $('#savedBox').classList.toggle('hide',!has);$('#drop').classList.toggle('hide',has);
+  $('#savedBox').classList.toggle('hide',!has);
+  $('#dropTitle').textContent=has?'📂 新しいCSVを読み込む':'📂 CSVファイルを選ぶ';
   if(has)$('#savedInfo').innerHTML=`<b>${people.length}名</b>を記憶しています<br><span style="font-size:12px">読み込み日 ${esc(loadedAt)}</span>`;
 }
 
